@@ -1,0 +1,87 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "ScalingRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "application-autoscaling.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+            },
+            "RoleName": "dev-dnc-dynamoDB-autoscaling",
+            "Path": "/",
+            "Policies": [
+                {
+                    "PolicyName": "root",
+                    "PolicyDocument": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "dynamodb:DescribeTable",
+                                    "dynamodb:UpdateTable",
+                                    "cloudwatch:PutMetricAlarm",
+                                    "cloudwatch:DescribeAlarms",
+                                    "cloudwatch:GetMetricStatistics",
+                                    "cloudwatch:SetAlarmState",
+                                    "cloudwatch:DeleteAlarms"
+                                ],
+                                "Resource": "*"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "LambdaRole" : {
+        "Type" : "AWS::IAM::Role",
+        "Properties" : {
+          "AssumeRolePolicyDocument": {
+            "Version" : "2012-10-17",
+            "Statement" : [
+              {
+                "Effect" : "Allow",
+                "Principal" : {
+                  "Service" : ["lambda.amazonaws.com","s3.amazonaws.com"]
+                },
+                "Action" : [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "dev-dnc-lambda-dynamoDB-write",
+          "Path" : "/",
+          "ManagedPolicyArns":["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole","arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB","arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"],
+          "Policies": [{
+                           "PolicyName": "policyname",
+                           "PolicyDocument": {
+                                     "Version": "2012-10-17",
+                                     "Statement": [{
+                                  "Effect": "Allow",
+                                                "Resource": "*",
+                                                "Action": [
+                                                            "dynamodb:PutItem",
+                                                            "dynamodb:BatchWriteItem"
+                                                ]
+                                    }]
+                           }
+                  }]
+        }
+     }
+    }
+}
