@@ -77,7 +77,7 @@
             "Type": "AWS::ApiGateway::Account",
             "Properties": {
                 "CloudWatchRoleArn":  {
-                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-dynamoDB-autoscaling"
+                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-cw-logs-write"
                 }
             }
         },
