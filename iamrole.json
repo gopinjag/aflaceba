@@ -117,51 +117,51 @@
                 "ManagedPolicyArns": [
                     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
                 ]
-            },
-            "ApiGatewayCloudWatchLogsRole": {
-                "Type": "AWS::IAM::Role",
-                "Properties": {
-                    "AssumeRolePolicyDocument": {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Principal": {
-                                    "Service": [
-                                        "apigateway.amazonaws.com"
-                                    ]
-                                },
-                                "Action": [
-                                    "sts:AssumeRole"
-                                ]
-                            }
-                        ]
-                    },
-                    "RoleName": "dev-dnc-cw-logs-write",
-                    "Policies": [
+            }
+        },
+        "ApiGatewayCloudWatchLogsRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "dev-dnc-cw-logs-write",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
                         {
-                            "PolicyName": "ApiGatewayLogsPolicy",
-                            "PolicyDocument": {
-                                "Version": "2012-10-17",
-                                "Statement": [
-                                    {
-                                        "Effect": "Allow",
-                                        "Action": [
-                                            "logs:CreateLogGroup",
-                                            "logs:CreateLogStream",
-                                            "logs:DescribeLogGroups",
-                                            "logs:DescribeLogStreams",
-                                            "logs:PutLogEvents",
-                                            "logs:GetLogEvents",
-                                            "logs:FilterLogEvents"
-                                        ],
-                                        "Resource": "*"
-                                    }
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "apigateway.amazonaws.com"
                                 ]
-                            }
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
                         }
                     ]
-                }
+                },
+                "Policies": [
+                    {
+                        "PolicyName": "ApiGatewayLogsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:DescribeLogGroups",
+                                        "logs:DescribeLogStreams",
+                                        "logs:PutLogEvents",
+                                        "logs:GetLogEvents",
+                                        "logs:FilterLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
         }
     }
