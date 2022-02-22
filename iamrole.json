@@ -2,86 +2,167 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Resources": {
         "ScalingRole": {
-        "Type": "AWS::IAM::Role",
-        "Properties": {
-            "AssumeRolePolicyDocument": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": [
-                                "application-autoscaling.amazonaws.com"
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "application-autoscaling.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
                             ]
-                        },
-                        "Action": [
-                            "sts:AssumeRole"
-                        ]
+                        }
+                    ]
+                },
+                "RoleName": "dev-dnc-dynamoDB-autoscaling",
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:DescribeTable",
+                                        "dynamodb:UpdateTable",
+                                        "cloudwatch:PutMetricAlarm",
+                                        "cloudwatch:DescribeAlarms",
+                                        "cloudwatch:GetMetricStatistics",
+                                        "cloudwatch:SetAlarmState",
+                                        "cloudwatch:DeleteAlarms"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
                     }
                 ]
+            }
+        },
+        "LambdaRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com",
+                                    "s3.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "RoleName": "dev-dnc-lambda-dynamoDB-write",
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+                    "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB",
+                    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "policyname",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Resource": "*",
+                                    "Action": [
+                                        "dynamodb:PutItem",
+                                        "dynamodb:BatchWriteItem"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "RoleName": "dev-dnc-lambda-apigw-write",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ]
             },
-            "RoleName": "dev-dnc-dynamoDB-autoscaling",
-            "Path": "/",
-            "Policies": [
-                {
-                    "PolicyName": "root",
-                    "PolicyDocument": {
+            "ApiGatewayCloudWatchLogsRole": {
+                "Type": "AWS::IAM::Role",
+                "Properties": {
+                    "AssumeRolePolicyDocument": {
                         "Version": "2012-10-17",
                         "Statement": [
                             {
                                 "Effect": "Allow",
+                                "Principal": {
+                                    "Service": [
+                                        "apigateway.amazonaws.com"
+                                    ]
+                                },
                                 "Action": [
-                                    "dynamodb:DescribeTable",
-                                    "dynamodb:UpdateTable",
-                                    "cloudwatch:PutMetricAlarm",
-                                    "cloudwatch:DescribeAlarms",
-                                    "cloudwatch:GetMetricStatistics",
-                                    "cloudwatch:SetAlarmState",
-                                    "cloudwatch:DeleteAlarms"
-                                ],
-                                "Resource": "*"
+                                    "sts:AssumeRole"
+                                ]
                             }
                         ]
-                    }
+                    },
+                    "RoleName": "dev-dnc-cw-logs-write",
+                    "Policies": [
+                        {
+                            "PolicyName": "ApiGatewayLogsPolicy",
+                            "PolicyDocument": {
+                                "Version": "2012-10-17",
+                                "Statement": [
+                                    {
+                                        "Effect": "Allow",
+                                        "Action": [
+                                            "logs:CreateLogGroup",
+                                            "logs:CreateLogStream",
+                                            "logs:DescribeLogGroups",
+                                            "logs:DescribeLogStreams",
+                                            "logs:PutLogEvents",
+                                            "logs:GetLogEvents",
+                                            "logs:FilterLogEvents"
+                                        ],
+                                        "Resource": "*"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
                 }
-            ]
+            }
         }
-    },
-    "LambdaRole" : {
-        "Type" : "AWS::IAM::Role",
-        "Properties" : {
-          "AssumeRolePolicyDocument": {
-            "Version" : "2012-10-17",
-            "Statement" : [
-              {
-                "Effect" : "Allow",
-                "Principal" : {
-                  "Service" : ["lambda.amazonaws.com","s3.amazonaws.com"]
-                },
-                "Action" : [
-                  "sts:AssumeRole"
-                ]
-              }
-            ]
-          },
-          "RoleName": "dev-dnc-lambda-dynamoDB-write",
-          "Path" : "/",
-          "ManagedPolicyArns":["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole","arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB","arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"],
-          "Policies": [{
-                           "PolicyName": "policyname",
-                           "PolicyDocument": {
-                                     "Version": "2012-10-17",
-                                     "Statement": [{
-                                  "Effect": "Allow",
-                                                "Resource": "*",
-                                                "Action": [
-                                                            "dynamodb:PutItem",
-                                                            "dynamodb:BatchWriteItem"
-                                                ]
-                                    }]
-                           }
-                  }]
-        }
-     }
     }
 }
