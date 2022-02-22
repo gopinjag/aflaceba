@@ -28,13 +28,13 @@
                 "BillingMode": "PAY_PER_REQUEST",
                 "AttributeDefinitions":[
                     {
-                        "AttributeName": "uuid",
+                        "AttributeName": "sdnc_uuid",
                         "AttributeType": "S"
                     }
                 ],
                 "KeySchema":[
                     {
-                        "AttributeName": "uuid",
+                        "AttributeName": "sdnc_uuid",
                         "KeyType": "HASH"
                     }
                 ],
@@ -63,58 +63,10 @@
                     ]
                 },
                 "RoleARN": {
-                    "Fn::GetAtt": [
-                        "ScalingRole",
-                        "Arn"
-                    ]
+                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-dynamoDB-autoscaling"
                 },
                 "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
                 "ServiceNamespace": "dynamodb"
-            }
-        },
-        "ScalingRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": [
-                                    "application-autoscaling.amazonaws.com"
-                                ]
-                            },
-                            "Action": [
-                                "sts:AssumeRole"
-                            ]
-                        }
-                    ]
-                },
-                "Path": "/",
-                "Policies": [
-                    {
-                        "PolicyName": "root",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "dynamodb:DescribeTable",
-                                        "dynamodb:UpdateTable",
-                                        "cloudwatch:PutMetricAlarm",
-                                        "cloudwatch:DescribeAlarms",
-                                        "cloudwatch:GetMetricStatistics",
-                                        "cloudwatch:SetAlarmState",
-                                        "cloudwatch:DeleteAlarms"
-                                    ],
-                                    "Resource": "*"
-                                }
-                            ]
-                        }
-                    }
-                ]
             }
         },
         "WriteScalingPolicy": {
@@ -135,50 +87,12 @@
                 }
             }
         },
-        "LambdaRole" : {
-          "Type" : "AWS::IAM::Role",
-          "Properties" : {
-            "AssumeRolePolicyDocument": {
-              "Version" : "2012-10-17",
-              "Statement" : [
-                {
-                  "Effect" : "Allow",
-                  "Principal" : {
-                    "Service" : ["lambda.amazonaws.com","s3.amazonaws.com"]
-                  },
-                  "Action" : [
-                    "sts:AssumeRole"
-                  ]
-                }
-              ]
-            },
-            "Path" : "/",
-            "ManagedPolicyArns":["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole","arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB","arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"],
-            "Policies": [{
-					         "PolicyName": "policyname",
-					         "PolicyDocument": {
-						               "Version": "2012-10-17",
-						               "Statement": [{
-                                    "Effect": "Allow",
-  							                    "Resource": "*",
-							                      "Action": [
-								                              "dynamodb:PutItem",
-                                                              "dynamodb:BatchWriteItem"
-							                      ]
-						              }]
-					         }
-				    }]
-          }
-       },
         "CsvToDDBLambdaFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "Handler": "index.lambda_handler",
                 "Role": {
-                    "Fn::GetAtt": [
-                        "LambdaRole",
-                        "Arn"
-                    ]
+                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-lambda-dynamoDB-write"
                 },
                 "Code": {
                     "ZipFile": {
