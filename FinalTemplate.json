@@ -63,7 +63,8 @@
                     ]
                 },
                 "RoleARN": {
-                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-dynamoDB-autoscaling"
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/dev-dnc-dynamoDB-autoscaling"
+                    
                 },
                 "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
                 "ServiceNamespace": "dynamodb"
@@ -92,7 +93,7 @@
             "Properties": {
                 "Handler": "index.lambda_handler",
                 "Role": {
-                    "Fn::Sub": "arn:aws:iam::{AWS::AccountId}:role/dev-dnc-lambda-dynamoDB-write"
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/dev-dnc-lambda-dynamoDB-write"    
                 },
                 "Code": {
                     "ZipFile": {
