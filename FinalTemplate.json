@@ -25,7 +25,11 @@
             "Type": "AWS::DynamoDB::Table",
             "Properties":{
                 "TableName": {"Ref" : "DynamoDBTableName"},
-                "BillingMode": "PAY_PER_REQUEST",
+                "BillingMode": "PROVISIONED",
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits" : 10,
+                    "WriteCapacityUnits" : 10
+                  },
                 "AttributeDefinitions":[
                     {
                         "AttributeName": "sdnc_uuid",
