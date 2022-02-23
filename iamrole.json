@@ -127,13 +127,14 @@
                                         "dynamodb:GetItem"
                                     ],
                                     "Resource": {
-                                        "Fn::Sub": "arn:${Partition}:dynamodb:${Region}:${Account}:table/DNC-*"
+                                        "Fn::Sub": "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/DNC-*"
                                     }
                                 },
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "dynamodb:ListTables"
+                                        "dynamodb:ListTables",
+                                        "dynamodb:scan"
 
                                     ],
                                     "Resource": "*"
