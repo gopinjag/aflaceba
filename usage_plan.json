@@ -199,20 +199,12 @@
                 "Name": "dev-aflac-api-key",
                 "StageKeys": [
                     {
-                        "ApiId": {
+                        "RestApiId": {
                             "Ref": "GreetingApi"
                         },
-                        "Stage": {
+                        "StageName": {
                             "Ref": "GreetingApiStage"
                         }
-                        },
-                        {
-                            "ApiId": {
-                                "Ref": "GreetingApi"
-                            },
-                            "Stage": {
-                                "Ref": "ApiDeployment"
-                            }
                         }
             ]
             }
@@ -228,14 +220,6 @@
                     "Stage": {
                         "Ref": "GreetingApiStage"
                     }
-                    },
-                    {
-                        "ApiId": {
-                            "Ref": "GreetingApi"
-                        },
-                        "Stage": {
-                            "Ref": "ApiDeployment"
-                        }
                     }
                 ],
                 "Throttle": {
