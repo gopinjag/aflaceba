@@ -1,0 +1,87 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation creates Lambda function for authorizer and secrets manager",
+    "Parameters": {
+        "BucketName": {
+            "Description": "Name of the S3 bucket you will deploy the CSV file to",
+            "Type": "String",
+            "Default": "devdencbucket",
+            "ConstraintDescription": "must be a valid bucket name."
+        },
+        "FileName": {
+            "Description": "Name of the S3 file (including suffix)",
+            "Type": "String",
+            "ConstraintDescription": "Valid S3 file name."
+        },
+        "HandlerforLambda": {
+            "Description": "The lambda handler in the function",
+            "Type": "String"
+        },
+        "IAMRoleforLambda": {
+            "Description": "arn of the Lambda role to access secret manager",
+            "Type": "String"
+        },
+        "Username":{
+            "Description": "secret password for authorizer",
+            "Type": "String"
+        },
+        "SecretPass": {
+            "Description": "secret password for authorizer",
+            "Type": "String",
+            "NoEcho": "true"
+        }
+    },
+    "Resources": {
+        "Lambdafunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties":{
+                "Role": {
+                    "Ref": "IAMRoleforLambda"
+                },
+                "Runtime": "python3.6",
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "BucketName"
+                    },
+                    "S3Key": {
+                        "Ref": "FileName"
+                    }
+                },
+                "FunctionName": "dev-authorizer-lambda",
+                "Handler": {
+                    "Ref": "HandlerforLambda"
+                }
+            }
+        },
+        "SecretsManager": {
+            "Type" : "AWS::SecretsManager::Secret",
+            "Properties" : {
+                "Name": "dev-authorizer-secret",
+                "SecretString": {
+                    "Fn::Join":
+                    [
+                        "",
+                        [
+                            "{\"username\":",
+                            "\"",
+                            {
+                                "Ref": "Username"
+                            },
+                            "\"",
+                            ",",
+                            "\"password\":",
+                            "\"",
+                            {
+                                "Ref": "SecretPass"
+                            },
+                            "\"",
+                            "}"
+                        ]
+                        
+                    ]
+            }
+        }
+    }
+}
+}
+
