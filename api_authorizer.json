@@ -33,7 +33,7 @@
         "RegionEndpoint":{
             "Type": "String",
             "Default": "us-east-1"
-        },
+        }
     },
     "Resources": {
         "GreetingLambda": {
@@ -72,7 +72,7 @@
         "GreetingApi": {
             "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
-                "Name": "DNC API",
+                "Name": "DEV DNC API",
                 "Description": "API used for Greeting requests",
                 "FailOnWarnings": true
             }
@@ -138,7 +138,7 @@
                 "RestApiId": {
                     "Ref": "GreetingApi"
                 },
-                "StageName": "LATEST"
+                "StageName": "dev"
             }
         },
         "ApiDeployment": {
@@ -165,7 +165,7 @@
                         "RootResourceId"
                     ]
                 },
-                "PathPart": "greeting"
+                "PathPart": "dnc"
             }
         },
         "GreetingRequest": {
@@ -179,10 +179,10 @@
                         "AuthorizerId"
                     ]
                 },
-                "HttpMethod": "GET",
+                "HttpMethod": "POST",
                 "ApiKeyRequired": "true",
                 "Integration": {
-                    "Type": "AWS",
+                    "Type": "AWS_PROXY",
                     "IntegrationHttpMethod": "POST",
                     "Uri": {
                         "Fn::Join": [
@@ -207,8 +207,6 @@
                         {
                             "StatusCode": 200,
                             "ResponseParameters": {
-                                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-                                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
                                 "method.response.header.Access-Control-Allow-Origin": "'*'"
                             }
                         }
@@ -224,13 +222,56 @@
                     {
                         "StatusCode": 200,
                         "ResponseParameters": {
-                            "method.response.header.Access-Control-Allow-Headers": false,
-                            "method.response.header.Access-Control-Allow-Methods": false,
                             "method.response.header.Access-Control-Allow-Origin": false
                         }
                     }
                 ]
             }
+        },
+        "OptionsMethod": {
+            "DependsOn": "LambdaPermission",
+            "Type": "AWS::ApiGateway::Method",
+            "Properties":{
+                "AuthorizationType": "NONE",
+                "RestApiId":{
+                    "Ref": "GreetingApi"
+                },
+                "ResourceId":{
+                    "Ref": "GreetingResource"
+                },
+                "HttpMethod": "OPTIONS",
+                "Integration": {
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200,
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Origin": "'*'"
+                            },
+                            "ResponseTemplates": {
+                                "application/json": "' '"
+                            }
+                        }
+                    ],
+                    "PassthroughBehavior":"WHEN_NO_MATCH",
+                    "Type": "MOCK"
+                },
+                "MethodResponses": [
+                    {
+                    "StatusCode": 200,
+                    "ResponseModels": {
+                        "application/json":"Empty"
+                    },
+                    "ResponseParameters":{
+                        "method.response.header.Access-Control-Allow-Headers": "false",
+                        "method.response.header.Access-Control-Allow-Methods": "false",
+                        "method.response.header.Access-Control-Allow-Origin": "false"
+                    }
+                }
+            ]
+            }
+
         },
         "APIKey": {
             "Type": "AWS::ApiGateway::ApiKey",
@@ -263,7 +304,8 @@
                     }
                 ],
                 "Throttle": {
-                    "RateLimit": 10000
+                    "RateLimit": 10000,
+                    "BurstLimit": 5000
                 },
                 "UsagePlanName": "dev-aflac-usage-plan"
             }
