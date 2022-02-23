@@ -122,9 +122,9 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "dyanmodb:BatchGetItem",
-                                        "dyanmodb:DescribeTable",
-                                        "dyanmodb:GetItem"
+                                        "dynamodb:BatchGetItem",
+                                        "dynamodb:DescribeTable",
+                                        "dynamodb:GetItem"
                                     ],
                                     "Resource": {
                                         "Fn::Sub": "arn:${Partition}:dynamodb:${Region}:${Account}:table/DNC-*"
@@ -133,7 +133,7 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "dyanmodb:ListTables"
+                                        "dynamodb:ListTables"
 
                                     ],
                                     "Resource": "*"
