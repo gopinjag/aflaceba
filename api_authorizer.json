@@ -1,0 +1,412 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation creates usage plan and api key",
+    "Parameters": {
+        "BucketName": {
+            "Description": "Name of the S3 bucket you will deploy the CSV file to",
+            "Type": "String",
+            "Default": "devdencbucket",
+            "ConstraintDescription": "must be a valid bucket name."
+        },
+        "IntegrationLambdaFileName": {
+            "Description": "Name of the S3 file (including suffix)",
+            "Type": "String",
+            "ConstraintDescription": "Valid S3 file name."
+        },
+        "HandlerforIntegrationLambda": {
+            "Description": "The lambda handler in the function",
+            "Type": "String"
+        },
+        "AuthorizerFileName": {
+            "Description": "Name of the S3 file (including suffix)",
+            "Type": "String",
+            "ConstraintDescription": "Valid S3 file name."
+        },
+        "HandlerforAuthorizerLambda": {
+            "Description": "The lambda handler in the function",
+            "Type": "String"
+        },
+        "TableName":{
+            "Type": "String",
+            "Default": "DNC-List"
+        },
+        "RegionEndpoint":{
+            "Type": "String",
+            "Default": "us-east-1"
+        },
+    },
+    "Resources": {
+        "GreetingLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "BucketName"
+                    },
+                    "S3Key": {
+                        "Ref": "IntegrationLambdaFileName"
+                    }
+                },
+                "Description": "A greeting function",
+                "FunctionName": "GreetingLambda",
+                "Environment": {
+                  "Variables" : {
+                        "REGION_ENDPOINT": {
+                            "Ref": "RegionEndpoint"
+                        },
+                        "TABLE_NAME":{
+                            "Ref": "TableName"
+                        }
+                    }                     
+                },
+                "Handler": {
+                    "Ref": "HandlerforIntegrationLambda"
+                },
+                "Role": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/dev-dnc-lambda-apigw-write"
+                },
+                "Timeout": 600,
+                "Runtime": "dotnetcore3.1"
+            }
+        },
+        "GreetingApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+                "Name": "DNC API",
+                "Description": "API used for Greeting requests",
+                "FailOnWarnings": true
+            }
+        },
+        "LambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "GreetingLambda",
+                        "Arn"
+                    ]
+                },
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:execute-api:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                                "Ref": "GreetingApi"
+                            },
+                            "/*"
+                        ]
+                    ]
+                }
+            }
+        },
+        "ApiGatewayAccount": {
+            "Type": "AWS::ApiGateway::Account",
+            "Properties": {
+                "CloudWatchRoleArn":  {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/dev-dnc-cw-logs-write"
+                }
+            }
+        },
+        "GreetingApiStage": {
+            "DependsOn": [
+                "ApiGatewayAccount"
+            ],
+            "Type": "AWS::ApiGateway::Stage",
+            "Properties": {
+                "DeploymentId": {
+                    "Ref": "ApiDeployment"
+                },
+                "MethodSettings": [
+                    {
+                        "DataTraceEnabled": true,
+                        "HttpMethod": "*",
+                        "LoggingLevel": "INFO",
+                        "ResourcePath": "/*"
+                    }
+                ],
+                "RestApiId": {
+                    "Ref": "GreetingApi"
+                },
+                "StageName": "LATEST"
+            }
+        },
+        "ApiDeployment": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "DependsOn": [
+                "GreetingRequest"
+            ],
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "GreetingApi"
+                },
+                "StageName": "DummyStage"
+            }
+        },
+        "GreetingResource": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "GreetingApi"
+                },
+                "ParentId": {
+                    "Fn::GetAtt": [
+                        "GreetingApi",
+                        "RootResourceId"
+                    ]
+                },
+                "PathPart": "greeting"
+            }
+        },
+        "GreetingRequest": {
+            "DependsOn": "LambdaPermission",
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "CUSTOM",
+                "AuthorizerId": {
+                    "Fn::GetAtt": [
+                        "LambdaAuthorizer",
+                        "AuthorizerId"
+                    ]
+                },
+                "HttpMethod": "GET",
+                "ApiKeyRequired": "true",
+                "Integration": {
+                    "Type": "AWS",
+                    "IntegrationHttpMethod": "POST",
+                    "Uri": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:aws:apigateway:",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ":lambda:path/2015-03-31/functions/",
+                                {
+                                    "Fn::GetAtt": [
+                                        "GreetingLambda",
+                                        "Arn"
+                                    ]
+                                },
+                                "/invocations"
+                            ]
+                        ]
+                    },
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200,
+                            "ResponseParameters": {
+                                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                                "method.response.header.Access-Control-Allow-Origin": "'*'"
+                            }
+                        }
+                    ]
+                },
+                "ResourceId": {
+                    "Ref": "GreetingResource"
+                },
+                "RestApiId": {
+                    "Ref": "GreetingApi"
+                },
+                "MethodResponses": [
+                    {
+                        "StatusCode": 200,
+                        "ResponseParameters": {
+                            "method.response.header.Access-Control-Allow-Headers": false,
+                            "method.response.header.Access-Control-Allow-Methods": false,
+                            "method.response.header.Access-Control-Allow-Origin": false
+                        }
+                    }
+                ]
+            }
+        },
+        "APIKey": {
+            "Type": "AWS::ApiGateway::ApiKey",
+            "Properties": {
+                "Enabled": "true",
+                "Name": "dev-aflac-api-key",
+                "StageKeys": [
+                    {
+                        "RestApiId": {
+                            "Ref": "GreetingApi"
+                        },
+                        "StageName": {
+                            "Ref": "GreetingApiStage"
+                        }
+                        }
+            ]
+            }
+        },
+        "UsagePlan": {
+            "Type": "AWS::ApiGateway::UsagePlan",
+            "Properties": {
+                "ApiStages": [
+                    {
+                    "ApiId": {
+                        "Ref": "GreetingApi"
+                    },
+                    "Stage": {
+                        "Ref": "GreetingApiStage"
+                    }
+                    }
+                ],
+                "Throttle": {
+                    "RateLimit": 10000
+                },
+                "UsagePlanName": "dev-aflac-usage-plan"
+            }
+        },
+        "UsagePlanKey": {
+            "Type": "AWS::ApiGateway::UsagePlanKey",
+            "Properties": {
+                "KeyId": {
+                    "Ref": "APIKey"
+                },
+                "KeyType": "API_KEY",
+                "UsagePlanId": {
+                    "Ref": "UsagePlan"
+                }
+            }
+        },
+        "AuthorizerLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "BucketName"
+                    },
+                    "S3Key": {
+                        "Ref": "AuthorizerFileName"
+                    }
+                },
+                "Description": "Authorizer lambda function",
+                "FunctionName": "ApiAuthorizerLambda",
+                "Environment": {
+                  "Variables" : {
+                        "REGION_ENDPOINT": "us-east-1",
+                        "Secret":{
+                            "Ref": "ApiToken"
+                        }
+                    }                     
+                },
+                "Handler": {
+                    "Ref": "HandlerforIntegrationLambda"
+                },
+                "Role": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/dev-dnc-lambda-authorizer"
+                },
+                "Timeout": 15,
+                "Runtime": "dotnetcore3.1"
+            }
+        },
+        "AuthorizerLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "AuthorizerLambda",
+                        "Arn"
+                    ]
+                },
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:execute-api:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                                "Ref": "GreetingApi"
+                            },
+                            "/*"
+                        ]
+                    ]
+                }
+            }
+        },
+        "LambdaAuthorizer": {
+            "Type" : "AWS::ApiGateway::Authorizer",
+            "Properties" : {
+                "AuthorizerResultTtlInSeconds" : 0,
+                "AuthorizerUri" : {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:apigateway:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":lambda:path/2015-03-31/functions/",
+                            {
+                                "Fn::GetAtt": [
+                                    "AuthorizerLambda",
+                                    "Arn"
+                                ]
+                            },
+                            "/invocations"
+                        ]
+                    ]
+                },
+                "Type": "REQUEST",
+                "Name": "LambdaAuthorizer",
+                "RestApiId": {
+                    "Ref": "GreetingApi"
+                }
+            }
+        },
+        "ApiToken": {
+          "Type" : "AWS::SecretsManager::Secret",
+          "Properties" : {
+              "GenerateSecretString" : {  
+                "ExcludePunctuation" : true,
+                "GenerateStringKey" : "password",
+                "SecretStringTemplate" : {
+                    "Fn::Sub": "{\"username\": \"apikey\",\"password\": \"RandomPassword\"}"
+                }
+               },
+              "Name" : "ApiToken"
+            }
+        }
+    },
+    "Outputs": {
+        "RootUrl": {
+            "Description": "Root URL of the API gateway",
+            "Value": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://",
+                        {
+                            "Ref": "GreetingApi"
+                        },
+                        ".execute-api.",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".amazonaws.com"
+                    ]
+                ]
+            }
+        }
+    }
+}
