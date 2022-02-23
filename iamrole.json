@@ -113,6 +113,35 @@
                         }
                     ]
                 },
+                "Policies": [
+                    {
+                        "PolicyName": "LambdaDynamoDBAccess",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dyanmodb:BatchGetItem",
+                                        "dyanmodb:DescribeTable",
+                                        "dyanmodb:GetItem"
+                                    ],
+                                    "Resource": {
+                                        "Fn::Sub": "arn:${Partition}:dynamodb:${Region}:${Account}:table/dev*"
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dyanmodb:ListTables"
+
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ],
                 "RoleName": "dev-dnc-lambda-apigw-write",
                 "ManagedPolicyArns": [
                     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
