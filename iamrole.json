@@ -127,7 +127,7 @@
                                         "dyanmodb:GetItem"
                                     ],
                                     "Resource": {
-                                        "Fn::Sub": "arn:${Partition}:dynamodb:${Region}:${Account}:table/dev*"
+                                        "Fn::Sub": "arn:${Partition}:dynamodb:${Region}:${Account}:table/DNC-*"
                                     }
                                 },
                                 {
