@@ -1,0 +1,44 @@
+"Metadata":{
+    "AWS::CloudFormation::Interface":{
+        "ParameterGroups" :[
+            {
+                "Label": {
+                    "default": "DNC Inputs and Common Environment variables"
+                },
+                "Parameters": [
+                    "BucketName",
+                    "TableName",
+                    "RegionEndpoint"
+                ]
+            },
+            {
+                "Label": {
+                    "default": "Authorizer Lambda Details"
+                },
+                "Parameters": [
+                    "AuthorizerFileName",
+                    "HandlerforAuthorizerLambda"
+                ]
+            },
+            {
+                "Label": {
+                    "default": "Integration Lambda Details"
+                },
+                "Parameters": [
+                    "HandlerforIntegrationLambda",
+                    "IntegrationLambdaFileName"
+                ]
+            },
+            {
+                "Label":  {
+                    "default": "CloudSearch Lambda Details"
+                },
+                "Parameters": [
+                    "HandlerforCloudSearchLambda",
+                    "CloudSearchLambdaFileName"
+                ]
+            }
+
+        ]
+    }
+}
